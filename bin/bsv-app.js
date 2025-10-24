@@ -29,7 +29,7 @@ async function run() {
     'Meter - An intro to Wallet, sCrypt and overlays': 'https://github.com/p2ppsr/meter.git',
     'MetaMarket — Marketplace for 3D Objects': 'https://github.com/p2ppsr/metamarket.git',
     'ToDo List — Simple demo of Wallet,  baskets and encryption': 'https://github.com/p2ppsr/todo-ts.git',
-    'MarsCast — Micropayment-monetized weather data from Mars for cool people': 'https://github.com/p2ppsr/meter.git',
+    'MarsCast — Micropayment-monetized weather data from Mars for cool people': 'https://github.com/p2ppsr/mars-cast.git',
     'Coinflip — Trustless, provably fair peer-to-peer interactions': 'https://github.com/p2ppsr/coinflip.git',
     'Postboard - Global public town square of messages': 'https://github.com/p2ppsr/hello-overlay.git',
     'Locksmith — Simple demonstration of locking up coins with a message': 'https://github.com/p2ppsr/locksmith.git',
