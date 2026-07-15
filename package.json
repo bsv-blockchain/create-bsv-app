@@ -4,7 +4,7 @@
   "description": "Deprecated redirect to create-bsv-app",
   "main": "bin/bsv-app.js",
   "bin": {
-    "app": "./bin/bsv-app.js"
+    "app": "bin/bsv-app.js"
   },
   "scripts": {
     "start": "node ./bin/bsv-app.js"
