@@ -1,242 +1,26 @@
 #!/usr/bin/env node
-const { Command } = require('commander')
-const { execSync } = require('child_process')
-const path = require('path')
-const fs = require('fs-extra')
-const simpleGit = require('simple-git')
-const figlet = require('figlet')
-const os = require('os')
+'use strict'
 
-let inquirer
-let chalk
+const { spawnSync } = require('node:child_process')
 
-// Gracefully handle SIGINT (CTRL+C) globally
-process.on('SIGINT', () => {
-  console.log('\n🚪 Exiting... Goodbye!')
-  process.exit(0)
-})
+const replacementPackage = process.env.CREATE_BSV_APP_PACKAGE || 'create-bsv-app'
+const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 
-async function run() {
-  chalk = (await import('chalk')).default
-  inquirer = (await import('inquirer')).default
+console.warn([
+  '@bsv/app is deprecated and has moved to create-bsv-app.',
+  'Use `npx create-bsv-app ...` for all new and existing projects.',
+  'Forwarding this invocation now.'
+].join('\n'))
 
-  const program = new Command()
+const result = spawnSync(
+  npm,
+  ['exec', '--yes', `--package=${replacementPackage}`, '--', 'create-bsv-app', ...process.argv.slice(2)],
+  { stdio: 'inherit' }
+)
 
-  const templates = {
-    'Frontend Template — Get started with a client-side React project': 'https://github.com/p2ppsr/frontend-project-template.git',
-    'Convo - A secure chat app': 'https://github.com/p2ppsr/convo.git',
-    'Pollr - Blockchain polls with overlay networks': 'https://github.com/p2ppsr/pollr.git',
-    'Meter - An intro to Wallet, sCrypt and overlays': 'https://github.com/p2ppsr/meter.git',
-    'MetaMarket — Marketplace for 3D Objects': 'https://github.com/p2ppsr/metamarket.git',
-    'ToDo List — Simple demo of Wallet,  baskets and encryption': 'https://github.com/p2ppsr/todo-ts.git',
-    'MarsCast — Micropayment-monetized weather data from Mars for cool people': 'https://github.com/p2ppsr/mars-cast.git',
-    'Coinflip — Trustless, provably fair peer-to-peer interactions': 'https://github.com/p2ppsr/coinflip.git',
-    'Postboard - Global public town square of messages': 'https://github.com/p2ppsr/hello-overlay.git',
-    'Locksmith — Simple demonstration of locking up coins with a message': 'https://github.com/p2ppsr/locksmith.git',
-    'PeerPay — Simple, peer-to-peer BSV payments backed by identity': 'https://github.com/p2ppsr/peerpay-react.git',
-    'AtFinder — Alternative UI for PeerPay that uses the same protocols': 'https://github.com/p2ppsr/atfinder-ui.git',
-    'Full Stack Template — Get started with a client-side React project that will also use an overlay': 'https://github.com/p2ppsr/frontend-project-template.git',
-    'Backend Template — Get started with an overlay service for tracking UTXOs': 'https://github.com/p2ppsr/backend-project-template.git'
-  }
-
-  async function checkGitInstalled() {
-    try {
-      execSync('git --version', { stdio: 'ignore' })
-    } catch (error) {
-      console.error(
-        chalk.red('Git is not installed or not available in PATH. Please install Git and try again.')
-      )
-      process.exit(1)
-    }
-  }
-
-  async function checkNpmInstalled() {
-    try {
-      execSync('npm --version', { stdio: 'ignore' })
-    } catch (error) {
-      console.error(
-        chalk.red('npm is not installed or not available in PATH. Please install Node.js and try again.')
-      )
-      process.exit(1)
-    }
-  }
-
-  async function cloneTemplate(templateUrl, projectDir) {
-    try {
-      const git = simpleGit()
-      console.log(chalk.blue(`Cloning repository from ${templateUrl}...`))
-      await git.clone(templateUrl, projectDir)
-      console.log(chalk.green(`Repository cloned to ${projectDir}`))
-    } catch (error) {
-      console.error(chalk.red('Error cloning repository:'), error.message)
-      process.exit(1)
-    }
-  }
-
-  async function installDependencies(projectDir) {
-    const installInDir = async (dir) => {
-      const packageJsonPath = path.join(dir, 'package.json')
-      if (fs.existsSync(packageJsonPath)) {
-        try {
-          console.log(chalk.blue(`Installing dependencies in ${dir}...`))
-          execSync('npm install', { cwd: dir, stdio: 'inherit' })
-          console.log(chalk.green(`Dependencies installed successfully in ${dir}.`))
-        } catch (error) {
-          console.error(chalk.red(`Error installing dependencies in ${dir}:`), error.message)
-          process.exit(1)
-        }
-      } else {
-        console.warn(chalk.yellow(`No package.json found in ${dir}. Skipping dependency installation.`))
-      }
-    }
-
-    // Install root dependencies
-    await installInDir(projectDir)
-
-    // Check and install dependencies in frontend and backend directories if they exist
-    const frontendDir = path.join(projectDir, 'frontend')
-    const backendDir = path.join(projectDir, 'backend')
-
-    if (fs.existsSync(frontendDir)) {
-      await installInDir(frontendDir)
-    }
-
-    if (fs.existsSync(backendDir)) {
-      await installInDir(backendDir)
-    }
-  }
-
-  async function customizePackageJson(projectDir, customizations) {
-    const packageJsonPath = path.join(projectDir, 'package.json')
-    if (fs.existsSync(packageJsonPath)) {
-      const packageJson = fs.readJsonSync(packageJsonPath)
-      for (const key of Object.keys(customizations)) {
-        packageJson[key] = customizations[key]
-      }
-      fs.writeJsonSync(packageJsonPath, packageJson, { spaces: 2 })
-      console.log(`Modified package.json: ${JSON.stringify(packageJson, null, 2)}`)
-    }
-  }
-
-  console.log(
-    chalk.yellow(
-      figlet.textSync('BSV', { horizontalLayout: 'full' })
-    )
-  )
-  console.log(chalk.green.bold('Start building your BSV-powered app with ease! 🚀'))
-
-  await checkGitInstalled()
-  await checkNpmInstalled()
-
-  program
-    .option('-s, --skip-install', 'Skip npm install')
-    .option('-g, --git-init', 'Initialize a new git repository')
-    .option('-y, --yes', 'Use default options without prompting')
-    .parse(process.argv)
-
-  const options = program.opts()
-
-  let template, projectName, authorName
-  const currentUser = os.hostname() // Use the hostname of the computer
-  try {
-    if (options.yes) {
-      template = 'Meter - A feature-packed starting point'
-      projectName = 'bsv-app'
-      authorName = ''
-    } else {
-      const { templateChoice } = await inquirer.prompt([
-        {
-          type: 'list',
-          name: 'templateChoice',
-          message: 'Which template would you like to use?',
-          choices: Object.keys(templates),
-        },
-      ])
-
-      template = templateChoice
-
-      const { projectNameInput } = await inquirer.prompt([
-        {
-          type: 'input',
-          name: 'projectNameInput',
-          message: 'Enter a name for your project:',
-          default: 'bsv-app',
-          validate: (input) => input.length > 0 || 'Project name cannot be empty.',
-        }
-      ])
-
-      projectName = projectNameInput
-
-      const { authorNameInput } = await inquirer.prompt([
-        {
-          type: 'input',
-          name: 'authorNameInput',
-          message: 'Enter the author name (hostname by default):',
-          default: ''
-        }
-      ])
-
-      authorName = authorNameInput
-    }
-  } catch (error) {
-    if (error.isTtyError) {
-      console.error(chalk.red('❌ Prompt could not be rendered in this environment.'))
-    } else if (error.message.includes('User force closed the prompt')) {
-      console.log(chalk.yellow('\n🚪 Goodbye!'))
-    } else {
-      console.error(chalk.red('❌ An unexpected error occurred:'), error.message)
-    }
-    process.exit(0)
-  }
-
-  // If authorName is empty, fallback to machine's hostname
-  if (!authorName) {
-    authorName = currentUser
-  }
-
-  const projectDir = path.resolve(process.cwd(), projectName)
-
-  if (fs.existsSync(projectDir)) {
-    console.error(chalk.red(`❌ Directory "${projectName}" already exists.`))
-    process.exit(1)
-  }
-
-  await cloneTemplate(templates[template], projectDir)
-
-  const gitDir = path.join(projectDir, '.git')
-  if (fs.existsSync(gitDir)) {
-    fs.removeSync(gitDir)
-  }
-
-  const customizations = {}
-  if (projectName) customizations.name = projectName
-  if (authorName) customizations.author = authorName
-
-  await customizePackageJson(projectDir, customizations)
-
-  if (!options.skipInstall) {
-    await installDependencies(projectDir)
-  }
-
-  if (options.gitInit) {
-    console.log(chalk.blue('Initializing new git repository...'))
-    try {
-      const git = simpleGit(projectDir)
-      await git.init()
-    } catch (error) {
-      console.error(chalk.red('Error initializing git repository:'), error.message)
-      process.exit(1)
-    }
-  }
-
-  console.log(chalk.green('✅ All done! Start coding with:'))
-  console.log(chalk.cyan(`cd ${projectName}`))
-  console.log(chalk.cyan('npm start'))
+if (result.error) {
+  console.error(`Unable to start create-bsv-app: ${result.error.message}`)
+  process.exit(1)
 }
 
-run().catch((error) => {
-  import('chalk').then(({ default: chalk }) => {
-    console.error(chalk.red('❌ An error occurred:'), error)
-    process.exit(1)
-  })
-})
+process.exit(result.status ?? 1)
